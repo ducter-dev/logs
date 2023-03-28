@@ -1,36 +1,67 @@
 <template>
-  <q-page class="flex flex-center">
-    <q-file
-      filled
-      bottom-slots
-      v-model="file"
-      label="Archivo"
-      accept=".log"
-      counter
-      ref="file"
-      @update:model-value="readHeaders()"
-      clearable
-    >
-      <template v-slot:prepend>
-        <q-icon name="cloud_upload" @click.stop.prevent />
-      </template>
-    </q-file>
-
-    <q-item tag="label" v-ripple v-for="item in headersDetected" :key="item">
-      <q-item-section avatar>
-        <q-checkbox size="xs" v-model="options" :val="item" />
-      </q-item-section>
-      <q-item-section>
-        <q-item-label>{{ item }}</q-item-label>
-      </q-item-section>
-    </q-item>
-
-    <q-btn
-      :disable="options.length <= 0"
-      color="primary"
-      label="Descargar"
-      @click="generateDownloadableFormat"
-    />
+  <q-page>
+    <div class="flex flex-center">
+      <h4>Reporte de Forticloud-webfilter</h4>
+    </div>
+    <div class="flex flex-center">
+      <q-card class="my-card">
+        <q-card-section class="bg-primary text-white">
+          <div class="text-h6"><q-icon name="file_upload" />Subir Archivo</div>
+          <div class="text-subtitle2">Archivo con extencion .log</div>
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right">
+          <q-file
+            filled
+            bottom-slots
+            v-model="file"
+            label="Archivo"
+            accept=".log"
+            counter
+            ref="file"
+            @update:model-value="readHeaders()"
+            clearable
+          >
+            <template v-slot:prepend>
+              <q-icon name="cloud_upload" @click.stop.prevent />
+            </template>
+          </q-file>
+        </q-card-actions>
+      </q-card>
+    </div>
+    <div v-if="headersDetected" class="flex flex-center q-mt-md q-mr-sm">
+      <q-card class="my-card">
+        <q-card-section class="bg-primary text-white">
+          <div class="text-h6"><q-icon name="toggle_on" />Seleccionar</div>
+          <div class="text-subtitle2">
+            Seleccione las campos necesarias para el reporte.
+          </div>
+        </q-card-section>
+        <q-separator />
+        <q-card-actions>
+          <q-item
+            tag="label"
+            v-ripple
+            v-for="item in headersDetected"
+            :key="item"
+          >
+            <q-item-section avatar>
+              <q-toggle size="xs" v-model="options" :val="item" />
+              <q-item-label>{{ item }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-card-actions>
+      </q-card>
+    </div>
+    <div v-if="headersDetected" class="flex flex-center q-mt-md q-mr-sm">
+      <q-btn
+        :disable="options.length <= 0"
+        color="primary"
+        icon="download"
+        label="Descargar"
+        @click="generateDownloadableFormat"
+      />
+    </div>
   </q-page>
 </template>
 
@@ -42,7 +73,7 @@ export default {
   data() {
     return {
       file: null,
-      options: [],
+      options: ["date", "time", "srcip", "dstip", "hostname", "url"],
       model: null,
       data: [],
       dataToExport: null,
