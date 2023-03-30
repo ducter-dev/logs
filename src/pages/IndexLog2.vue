@@ -6,13 +6,4 @@
   </q-page>
 </template>
 
-<script>
-import { defineComponent, ref } from "vue";
-
-export default defineComponent({
-  name: "IndexLog2",
-  setup() {
-    return {};
-  },
-});
-</script>
+<script setup></script>

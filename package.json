@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
+    "@vueuse/core": "^9.13.0",
     "axios": "^1.2.1",
     "browserify-fs": "^1.0.0",
     "pinia": "^2.0.11",

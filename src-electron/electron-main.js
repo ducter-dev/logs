@@ -31,6 +31,7 @@ function createWindow() {
       // More info: https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/electron-preload-script
       preload: path.resolve(__dirname, process.env.QUASAR_ELECTRON_PRELOAD),
     },
+    resizable: false,
   });
 
   mainWindow.loadURL(process.env.APP_URL);
@@ -54,7 +55,8 @@ app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {
   if (platform !== "darwin") {
-    app.quit();
+    //app.quit();
+    app.dock.hide();
   }
 });
 
