@@ -14,13 +14,11 @@
         </q-tab-panel>
 
         <q-tab-panel name="traffic">
-          <div class="text-h6">Alarms</div>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit.
+          <TopTraffic />
         </q-tab-panel>
 
         <q-tab-panel name="destination">
-          <div class="text-h6">Movies</div>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit.
+          <TopDestination />
         </q-tab-panel>
       </q-tab-panels>
     </q-card>
@@ -30,6 +28,8 @@
 <script setup>
 import { ref } from 'vue';
 import TopThreats from "../components/TopThreats.vue"
+import TopTraffic from "../components/TopTraffic.vue"
+import TopDestination from 'src/components/TopDestination.vue';
 
 const tab = ref('threats')
 </script>
