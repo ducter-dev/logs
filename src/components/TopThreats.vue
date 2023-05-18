@@ -3,6 +3,7 @@ import { ref, reactive, watch } from "vue"
 import { api } from '../boot/axios'
 import { useQuasar, exportFile } from 'quasar'
 import { useSettingStore } from "../stores/setting-store"
+import { db } from "src/boot/database";
 
 const loading = ref(null)
 const result = ref([])
@@ -20,9 +21,31 @@ previousMonday.setDate(currentDate.getDate() + daysToMonday);
 const mondayOfPreviousWeek = new Date(previousMonday);
 mondayOfPreviousWeek.setDate(previousMonday.getDate() - 7);
 
-const fechaFormateada = previousMonday.getFullYear() + '-' + ('0' + (previousMonday.getMonth() + 1)).slice(-2) + '-' + ('0' + previousMonday.getDate()).slice(-2) + ' ' + ('0' + previousMonday.getHours()).slice(-2) + ':' + ('0' + previousMonday.getMinutes()).slice(-2) + ':' + ('0' + previousMonday.getSeconds()).slice(-2);
-const fechaFormateada2 = mondayOfPreviousWeek.getFullYear() + '-' + ('0' + (mondayOfPreviousWeek.getMonth() + 1)).slice(-2) + '-' + ('0' + mondayOfPreviousWeek.getDate()).slice(-2) + ' ' + ('0' + mondayOfPreviousWeek.getHours()).slice(-2) + ':' + ('0' + mondayOfPreviousWeek.getMinutes()).slice(-2) + ':' + ('0' + mondayOfPreviousWeek.getSeconds()).slice(-2);
 
+const fechaFormateada =
+  previousMonday.getFullYear() +
+  "-" +
+  ("0" + (previousMonday.getMonth() + 1)).slice(-2) +
+  "-" +
+  ("0" + previousMonday.getDate()).slice(-2) +
+  " " +
+  "23" +
+  ":" +
+  "59" +
+  ":" +
+  "59";
+const fechaFormateada2 =
+  mondayOfPreviousWeek.getFullYear() +
+  "-" +
+  ("0" + (mondayOfPreviousWeek.getMonth() + 1)).slice(-2) +
+  "-" +
+  ("0" + mondayOfPreviousWeek.getDate()).slice(-2) +
+  " " +
+  "00" +
+  ":" +
+  "00" +
+  ":" +
+  "00";
 
 const form = reactive({
   from: ref(fechaFormateada2),
@@ -220,7 +243,6 @@ function wrapCsvValue(val, formatFn, row, colName) {
   return `"${formatted}"`
 }
 
-
 const exportTable = () => {
   // naive encoding to csv format
   const content = [columns.map(col => wrapCsvValue(col.label))].concat(
@@ -250,7 +272,6 @@ const exportTable = () => {
 }
 
 
-
 const myLocale = {
   /* starting with Sunday */
   days: 'Domingo_Lunes_Martes_Miércoles_Jueves_Viernes_Sábado'.split('_'),
@@ -272,6 +293,53 @@ const columns = [
   { name: 'date', align: 'center', label: 'Días detectado', field: 'date' },
 ]
 
+async function checkIfThreatExists(item) {
+  try {
+    const res = await db.threat.get({
+      name: item.threat,
+      comments: item.details !== undefined ? item.details.hasOwnProperty("action") ? item.details.action : '-' : '-',
+      from: form.from,
+      to: form.to,
+    });
+    return res !== undefined;
+  } catch (error) {
+    console.error('Error checking item existence:', error);
+    return false;
+  }
+}
+
+const storeData = () => {
+  newData.value.forEach((element) => {
+    console.log(element.name)
+    addThreat(element)
+  })
+}
+
+async function addThreat(item){
+  const threatExists = await checkIfThreatExists(item);
+  if (!threatExists) {
+    try {
+    //  console.log(item.name)
+
+      $q.notify({
+        color: "positive",
+        message: `El registro  ${item.name} fue guardado correctamente`,
+      });
+    } catch (error) {
+      $q.notify({
+        color: "negative",
+        message: `Error al guardar la información`,
+      });
+    }
+  } else {
+    $q.notify({
+      color: "negative",
+      message: `Error al guardar, ya existe un registro`,
+    });
+  }
+
+};
+
 </script>
 <template>
   <div class="row q-gutter-md" style="margin-bottom: 20px;">
@@ -280,7 +348,7 @@ const columns = [
         <template v-slot:prepend>
           <q-icon name="event" class="cursor-pointer">
             <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-              <q-date :locale="myLocale" v-model="form.from" mask="YYYY-MM-DD HH:mm">
+              <q-date :locale="myLocale" v-model="form.from" mask="YYYY-MM-DD HH:mm:ss">
                 <div class="row items-center justify-end">
                   <q-btn v-close-popup label="Close" color="primary" flat />
                 </div>
@@ -292,7 +360,7 @@ const columns = [
         <template v-slot:append>
           <q-icon name="access_time" class="cursor-pointer">
             <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-              <q-time v-model="form.from" mask="YYYY-MM-DD HH:mm" format24h>
+              <q-time v-model="form.from" mask="YYYY-MM-DD HH:mm:ss" format24h with-seconds>
                 <div class="row items-center justify-end">
                   <q-btn v-close-popup label="Close" color="primary" flat />
                 </div>
@@ -307,7 +375,7 @@ const columns = [
         <template v-slot:prepend>
           <q-icon name="event" class="cursor-pointer">
             <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-              <q-date :locale="myLocale" v-model="form.to" mask="YYYY-MM-DD HH:mm">
+              <q-date :locale="myLocale" v-model="form.to" mask="YYYY-MM-DD HH:mm:ss">
                 <div class="row items-center justify-end">
                   <q-btn v-close-popup label="Close" color="primary" flat />
                 </div>
@@ -319,7 +387,7 @@ const columns = [
         <template v-slot:append>
           <q-icon name="access_time" class="cursor-pointer">
             <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-              <q-time v-model="form.to" mask="YYYY-MM-DD HH:mm" format24h>
+              <q-time v-model="form.to" mask="YYYY-MM-DD HH:mm:ss" format24h with-seconds>
                 <div class="row items-center justify-end">
                   <q-btn v-close-popup label="Close" color="primary" flat />
                 </div>
@@ -330,7 +398,8 @@ const columns = [
       </q-input>
     </div>
     <div class="col flex content-center">
-      <q-btn color="primary" label="Buscar" @click="makeRequest()" />
+      <q-btn color="primary" label="Buscar" @click="makeRequest()" style="margin-right: 8px" />
+      <q-btn color="green" label="Guardar" @click="storeData()" />
     </div>
   </div>
 

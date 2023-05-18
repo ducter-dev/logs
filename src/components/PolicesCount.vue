@@ -4,13 +4,12 @@ import { api } from "../boot/axios";
 import { useQuasar, exportFile } from "quasar";
 import { useSettingStore } from "../stores/setting-store";
 import { db } from "src/boot/database";
-import { useObservable } from "@vueuse/rxjs";
-import { liveQuery } from "dexie";
 
 const currentDate = new Date();
 const oneDayInMillis = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
 const previousDate = new Date(currentDate.getTime() - oneDayInMillis);
 
+const canStore = ref(false);
 const loading = ref(null);
 const result = ref([]);
 
@@ -65,6 +64,7 @@ async function makeRequest(retryCount = 0, sessionid) {
   $q.loading.show({
     message: "Consultando información.",
   });
+  result.value = []
   try {
     const params = new URLSearchParams();
     params.append("vdom", "root");
@@ -107,6 +107,12 @@ async function makeRequest(retryCount = 0, sessionid) {
         message: "Información consultada correctamente.",
       });
       result.value = response.data.results.details;
+
+      if(result.value.length > 0){
+        canStore.value =true
+      }else{
+        canStore.value =false
+      }
       $q.loading.hide();
       return response.data;
     }
@@ -200,27 +206,22 @@ const sumaTotal = computed(() => {
   return result.value.reduce((suma, fila) => suma + fila.bytes, 0);
 });
 
-const existsPolicy = async () => {
-  const result = await db.policy
-    .where({
-      date: dateToStore.value,
-    })
-    .first();
-
-  console.log(result);
-
-  return typeof result !== "undefined" ? true : false;
-};
+async function checkIfPolicyExists() {
+  try {
+    const user = await db.policy.get({date: dateToStore.value});
+    return user !== undefined;
+  } catch (error) {
+    console.error('Error checking item existence:', error);
+    return false;
+  }
+}
 
 const addPolice = async () => {
-  if (existsPolicy()) {
-    console.log("Si existe");
-  } else {
-    console.log("no existe");
-  }
-  try {
+  const userExists = await checkIfPolicyExists();
+  if (!userExists) {
+    try {
     const id = await db.policy.add({
-      date: dateToStore,
+      date: dateToStore.value,
       rcvdbyte: sumaRecibido.value,
       sentbyte: sumaEnviado.value,
       bytes: sumaTotal.value,
@@ -241,10 +242,16 @@ const addPolice = async () => {
       message: `Error al guardar la información`,
     });
   }
+  } else {
+    $q.notify({
+      color: "negative",
+      message: `Error al guardar, ya existe un registro de esta fecha: ${dateToStore.value}`,
+    });
+  }
+
 };
 </script>
 <template>
-  {{ dateToStore }}
   <div class="row q-gutter-md" style="margin-bottom: 20px">
     <div class="col-3">
       <q-input filled v-model="form.from" label="Desde">
@@ -341,7 +348,7 @@ const addPolice = async () => {
         @click="makeRequest()"
         style="margin-right: 8px"
       />
-      <q-btn color="green" label="Guardar" @click="addPolice()" />
+      <q-btn color="green" label="Guardar" @click="addPolice()" :disable="!canStore" />
     </div>
   </div>
   <q-table
