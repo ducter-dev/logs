@@ -1,7 +1,7 @@
 <script setup>
-import { ref, reactive, onMounted } from "vue"
+import { ref, reactive, watch } from "vue"
 import { api } from '../boot/axios'
-import { useQuasar } from 'quasar'
+import { useQuasar, exportFile } from 'quasar'
 import { useSettingStore } from "../stores/setting-store"
 
 const loading = ref(null)
@@ -53,6 +53,23 @@ const threatLevel = (level) => {
   }
 }
 
+watch(result, async (newResult, oldREsult) => {
+  if (newResult.length > 0) {
+    $q.loading.show({
+      message: 'Preparando información.'
+    })
+
+    result.value.forEach((element) => {
+      fetchDetail(0, element)
+    });
+
+    setTimeout(() => {
+      $q.loading.hide()
+    }, 20000);
+
+  }
+})
+
 async function makeRequest(retryCount = 0, sessionid) {
   const maxRetries = 50;
 
@@ -98,17 +115,8 @@ async function makeRequest(retryCount = 0, sessionid) {
         color: 'positive',
         message: 'Información consultada correctamente.'
       })
-      // result.value = response.data.results.details
 
-      var requests = []
-
-      response.data.results.details.forEach((element) => {
-        console.log(element);
-
-        fetchDetail(element.threat, element.type, element.logcat, element)
-      });
-
-
+      result.value = response.data.results.details
       $q.loading.hide()
     }
   } catch (error) {
@@ -129,50 +137,117 @@ async function makeRequest(retryCount = 0, sessionid) {
   }
 }
 
-function fetchDetail(threat, type, logcat, element) {
-  $q.loading.show({
-    message: 'Consultando información.'
-  })
-  console.log('Consultando información.')
-  loading.value = true
-
+async function fetchDetail(retryCount = 0, element) {
+  const maxRetries = 5;
 
   const params = new URLSearchParams();
   params.append('extra', 'country_id');
   params.append('extra', 'reverse_lookup');
-  params.append('filter', `threattype=*"${type}"`);
-  params.append('filter', `threatname=*"${threat}"`);
-  params.append('filter', `logcat=*"${logcat}"`);
+  params.append('filter', `threattype=*"${element.type}"`);
+  params.append('filter', `threatname=*"${element.threat}"`);
+  params.append('filter', `logcat=*"${element.logcat}"`);
   params.append('filter', `_metadata.timestamp>="${convertToTimestamp(form.from)}000"`);
   params.append('filter', `_metadata.timestamp<="${convertToTimestamp(form.to)}000"`);
   params.append('filter', `srcintfrole=*"lan",srcintfrole=*"dmz",srcintfrole=*"undefined"`);
   params.append('filter', `policytype!*"proxy-policy"`);
   params.append('filter', `subtype=*"forward",subtype=*"sniffer",subtype=*"local"`);
   params.append('rows', 500);
-  params.append('serial_no', 'FWF40FTK20012933');
+  params.append('serial_no', settings.getCurrentData.serial);
   params.append('start', 0);
   params.append('vdom', 'root');
   params.append('access_token', settings.getCurrentData.token);
 
-  api.get(settings.getCurrentData.url + baseDetails, {
-    params: params
-  }).then((response) => {
+  const response = await api.get(settings.getCurrentData.url + baseDetails, { params: params });
 
-
+  if (Object.keys(response.data.results).length === 0) {
+    if (retryCount < maxRetries) {
+      return fetchDetail(retryCount + 1, element);
+    } else {
+      $q.notify({
+        color: 'negative',
+        message: 'Se alcanzó el límite de reintento.'
+      })
+      return null;
+    }
+  } else {
     let obj = {
       ...element, ...{ details: response.data.results.length > 0 ? response.data.results[0] : {} }
     }
-    result.value.push(obj)
-    $q.loading.hide()
-    loading.value = false
-
-  }).catch((error) => {
-    console.log('error.request', error);
-    $q.loading.hide()
-    loading.value = false
-  });
+    newData.value.push(obj)
+  }
 }
 
+
+function wrapCsvValue(val, formatFn, row, colName) {
+  let formatted = formatFn !== void 0
+    ? formatFn(val, row)
+    : val
+
+  formatted = formatted === void 0 || formatted === null
+    ? ''
+    : String(formatted)
+
+  formatted = formatted.split('"').join('""')
+  /**
+   * Excel accepts \n and \r in strings, but some other CSV parsers do not
+   * Uncomment the next two lines to escape new lines
+   */
+  // .split('\n').join('\\n')
+  // .split('\r').join('\\r')
+
+  if (colName == 'threatlevel') {
+
+    return threatLevel(val)
+  }
+
+  if (colName == 'action') {
+
+    return row.details !== undefined ? row.details.hasOwnProperty("action") ?
+      row.details.action : '-' : '-'
+  }
+
+  if (colName == 'srcip') {
+
+    return row.details !== undefined ? row.details.hasOwnProperty("srcip") ?
+      row.details.srcip : '-' : '-'
+  }
+
+  if (colName == 'date') {
+
+    return row.details !== undefined ? row.details.hasOwnProperty("date") ?
+      row.details.date : '-' : '-'
+  }
+  return `"${formatted}"`
+}
+
+
+const exportTable = () => {
+  // naive encoding to csv format
+  const content = [columns.map(col => wrapCsvValue(col.label))].concat(
+    newData.value.map(row => columns.map(col => wrapCsvValue(
+      typeof col.field === 'function'
+        ? col.field(row)
+        : row[col.field === void 0 ? col.name : col.field],
+      col.format,
+      row,
+      col.name
+    )).join(','))
+  ).join('\r\n')
+
+  const status = exportFile(
+    'amenazas.csv',
+    content,
+    'text/csv'
+  )
+
+  if (status !== true) {
+    $q.notify({
+      message: 'Browser denied file download...',
+      color: 'negative',
+      icon: 'warning'
+    })
+  }
+}
 
 
 
@@ -259,11 +334,11 @@ const columns = [
     </div>
   </div>
 
-  <q-table flat dense bordered :rows="result" :columns="columns" row-key="threat" :loading="loading"
+  <q-table flat dense bordered :rows="newData" :columns="columns" row-key="threat" :loading="loading"
     :rows-per-page-options="[0]" :pagination="{ rowsPerPage: 0, page: 1 }">
     <template v-slot:top-right>
       <q-btn color="green" dense icon-right="archive" label="Exportar csv" no-caps @click="exportTable()"
-        :disable="result.length <= 0" />
+        :disable="newData.length <= 0" />
     </template>
     <template v-slot:body="props">
       <q-tr :props="props">

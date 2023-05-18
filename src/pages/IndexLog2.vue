@@ -6,6 +6,7 @@
         <q-tab name="threats" label="Top Amenazas" />
         <q-tab name="traffic" label="Trafico" />
         <q-tab name="destination" label="Destino" />
+        <q-tab name="policies" label="Politicas" />
       </q-tabs>
       <q-tab-panels v-model="tab" animated>
         <q-tab-panel name="threats">
@@ -20,6 +21,9 @@
         <q-tab-panel name="destination">
           <TopDestination />
         </q-tab-panel>
+        <q-tab-panel name="policies">
+          <PolicesCount />
+        </q-tab-panel>
       </q-tab-panels>
     </q-card>
   </q-page>
@@ -30,6 +34,7 @@ import { ref } from 'vue';
 import TopThreats from "../components/TopThreats.vue"
 import TopTraffic from "../components/TopTraffic.vue"
 import TopDestination from 'src/components/TopDestination.vue';
+import PolicesCount from 'src/components/PolicesCount.vue';
 
 const tab = ref('threats')
 </script>

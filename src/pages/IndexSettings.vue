@@ -8,6 +8,8 @@ import { useSettingStore } from "../stores/setting-store"
 const form = reactive({
   url: null,
   token: null,
+  serial: null,
+  version: null,
 })
 
 const $q = useQuasar()
@@ -50,8 +52,9 @@ const onSubmit = () => {
       .get(form.url + base, { params: { access_token: form.token } })
       .then((response) => {
 
-        console.log("mensaje:", response);
         result.value = response.data
+        form.serial = response.data.serial
+        form.version = response.data.version
         validated.value = true
         $q.notify({
           icon: 'done',
@@ -180,6 +183,7 @@ onMounted(() => {
                         </q-input>
                       </div>
                     </div>
+
                   </q-card-section>
                 </div>
                 <div class="col q-pa-md">
