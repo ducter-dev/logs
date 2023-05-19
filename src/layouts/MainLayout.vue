@@ -11,6 +11,9 @@
           <router-link to="/log2" class="text-white">
             Analítica
           </router-link>
+          <router-link to="/report" class="text-white">
+           Reporte semanal
+          </router-link>
         </div>
         <q-space />
 

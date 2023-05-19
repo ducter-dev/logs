@@ -14,6 +14,16 @@ const routes = [
         component: () => import("pages/IndexLog2.vue"),
       },
       {
+        path: "/databases",
+        name: "databases",
+        component: () => import("pages/IndexDatabase.vue"),
+      },
+      {
+        path: "/report",
+        name: "report",
+        component: () => import("pages/IndexReport.vue"),
+      },
+      {
         path: "/settings",
         name: "settings.index",
         component: () => import("pages/IndexSettings.vue"),

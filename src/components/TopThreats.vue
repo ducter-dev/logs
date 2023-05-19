@@ -16,40 +16,42 @@ const currentDate = new Date();
 const currentDay = currentDate.getDay();
 const daysToMonday = 1 - currentDay;
 const previousMonday = new Date(currentDate);
-previousMonday.setDate(currentDate.getDate() + daysToMonday);
+previousMonday.setDate(currentDate.getDate() + (daysToMonday - 1));
 
 const mondayOfPreviousWeek = new Date(previousMonday);
-mondayOfPreviousWeek.setDate(previousMonday.getDate() - 7);
+mondayOfPreviousWeek.setDate(previousMonday.getDate() - 6);
 
+const formatDateTo = (date) => {
+  return date.getFullYear() +
+    "-" +
+    ("0" + (date.getMonth() + 1)).slice(-2) +
+    "-" +
+    ("0" + date.getDate()).slice(-2) +
+    " " +
+    "23" +
+    ":" +
+    "59" +
+    ":" +
+    "59";
+}
 
-const fechaFormateada =
-  previousMonday.getFullYear() +
-  "-" +
-  ("0" + (previousMonday.getMonth() + 1)).slice(-2) +
-  "-" +
-  ("0" + previousMonday.getDate()).slice(-2) +
-  " " +
-  "23" +
-  ":" +
-  "59" +
-  ":" +
-  "59";
-const fechaFormateada2 =
-  mondayOfPreviousWeek.getFullYear() +
-  "-" +
-  ("0" + (mondayOfPreviousWeek.getMonth() + 1)).slice(-2) +
-  "-" +
-  ("0" + mondayOfPreviousWeek.getDate()).slice(-2) +
-  " " +
-  "00" +
-  ":" +
-  "00" +
-  ":" +
-  "00";
+const formatDateFrom = (date) => {
+  return date.getFullYear() +
+    "-" +
+    ("0" + (date.getMonth() + 1)).slice(-2) +
+    "-" +
+    ("0" + date.getDate()).slice(-2) +
+    " " +
+    "00" +
+    ":" +
+    "00" +
+    ":" +
+    "00";
+}
 
 const form = reactive({
-  from: ref(fechaFormateada2),
-  to: ref(fechaFormateada),
+  from: ref(formatDateFrom(mondayOfPreviousWeek)),
+  to: ref(formatDateTo(previousMonday)),
 })
 
 const $q = useQuasar()
@@ -97,6 +99,7 @@ async function makeRequest(retryCount = 0, sessionid) {
   const maxRetries = 50;
 
   result.value = []
+  newData.value = []
 
   $q.loading.show({
     message: 'Consultando información.'
@@ -297,9 +300,31 @@ async function checkIfThreatExists(item) {
   try {
     const res = await db.threat.get({
       name: item.threat,
-      comments: item.details !== undefined ? item.details.hasOwnProperty("action") ? item.details.action : '-' : '-',
+      comments: item.details !== undefined ? item.details.hasOwnProperty("srcip") ? item.details.srcip : '-' : '-',
       from: form.from,
       to: form.to,
+    });
+    console.log(res)
+    return res !== undefined;
+  } catch (error) {
+    console.error('Error checking item existence:', error);
+    return false;
+  }
+}
+
+async function checkIfThreatIsRecurrent(item, form) {
+
+  const date1 = new Date(form.from);
+  date1.setDate(date1.getDate() - 7);
+
+  const date2 = new Date(form.to);
+  date2.setDate(date2.getDate() - 8);
+  try {
+    const res = await db.threat.get({
+      name: item.threat,
+      comments: item.details !== undefined ? item.details.hasOwnProperty("action") ? item.details.action : '-' : '-',
+      from: formatDateFrom(date1),
+      to: formatDateTo(date1),
     });
     return res !== undefined;
   } catch (error) {
@@ -310,20 +335,32 @@ async function checkIfThreatExists(item) {
 
 const storeData = () => {
   newData.value.forEach((element) => {
-    console.log(element.name)
     addThreat(element)
   })
 }
 
-async function addThreat(item){
+async function addThreat(item) {
   const threatExists = await checkIfThreatExists(item);
   if (!threatExists) {
+
     try {
-    //  console.log(item.name)
+      const isReccurrent = await checkIfThreatIsRecurrent(item, form)
+      const id = await db.threat.add({
+        name: item.threat,
+        category: item.type,
+        level: item.threatlevel,
+        textLevel: threatLevel(item.threatlevel),
+        action: item.details !== undefined ? item.details.hasOwnProperty("action") ? item.details.action : '-' : '-',
+        comments: item.details !== undefined ? item.details.hasOwnProperty("srcip") ? item.details.srcip : '-' : '-',
+        detectedDate: item.details !== undefined ? item.details.hasOwnProperty("date") ? item.details.date : '-' : '-',
+        from: form.from,
+        to: form.to,
+        recurrent: isReccurrent
+      });
 
       $q.notify({
         color: "positive",
-        message: `El registro  ${item.name} fue guardado correctamente`,
+        message: `El registro  ${item.threat} fue guardado correctamente`,
       });
     } catch (error) {
       $q.notify({
@@ -334,7 +371,7 @@ async function addThreat(item){
   } else {
     $q.notify({
       color: "negative",
-      message: `Error al guardar, ya existe un registro`,
+      message: `Error al guardar, ya existe un registro de la amenaza ${item.threat} en el mismo rango de fechas`,
     });
   }
 
