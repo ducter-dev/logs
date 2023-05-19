@@ -33,7 +33,7 @@ function createWindow() {
     },
   });
 
-  mainWindow.setResizable(false);
+  mainWindow.setResizable(true);
 
   mainWindow.loadURL(process.env.APP_URL);
 
