@@ -3,8 +3,31 @@ const routes = [
     path: "/",
     component: () => import("layouts/MainLayout.vue"),
     children: [
-      { path: "", component: () => import("pages/IndexPage.vue") },
-      { path: "/log2", component: () => import("pages/IndexLog2.vue") },
+      {
+        path: "",
+        name: "forticloud",
+        component: () => import("pages/IndexPage.vue"),
+      },
+      {
+        path: "/log2",
+        name: "log2",
+        component: () => import("pages/IndexLog2.vue"),
+      },
+      {
+        path: "/databases",
+        name: "databases",
+        component: () => import("pages/IndexDatabase.vue"),
+      },
+      {
+        path: "/report",
+        name: "report",
+        component: () => import("pages/IndexReport.vue"),
+      },
+      {
+        path: "/settings",
+        name: "settings.index",
+        component: () => import("pages/IndexSettings.vue"),
+      },
     ],
   },
 

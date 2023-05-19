@@ -22,7 +22,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     icon: path.resolve(__dirname, "icons/icon.png"), // tray icon
     width: 1000,
-    height: 600,
+    height: 1000,
     useContentSize: true,
     webPreferences: {
       contextIsolation: true,
@@ -32,6 +32,8 @@ function createWindow() {
       preload: path.resolve(__dirname, process.env.QUASAR_ELECTRON_PRELOAD),
     },
   });
+
+  mainWindow.setResizable(true);
 
   mainWindow.loadURL(process.env.APP_URL);
 
@@ -51,6 +53,8 @@ function createWindow() {
 }
 
 app.whenReady().then(createWindow);
+
+app.commandLine.appendSwitch("ignore-certificate-errors");
 
 app.on("window-all-closed", () => {
   if (platform !== "darwin") {

@@ -1,67 +1,48 @@
 <template>
-  <q-page>
-    <div class="flex flex-center">
-      <h4>Reporte de Forticloud-webfilter</h4>
-    </div>
-    <div class="flex flex-center">
-      <q-card class="my-card">
-        <q-card-section class="bg-primary text-white">
-          <div class="text-h6"><q-icon name="file_upload" />Subir Archivo</div>
-          <div class="text-subtitle2">Archivo con extencion .log</div>
-        </q-card-section>
-        <q-separator />
-        <q-card-actions align="right">
-          <q-file
-            filled
-            bottom-slots
-            v-model="file"
-            label="Archivo"
-            accept=".log"
-            counter
-            ref="file"
-            @update:model-value="readHeaders()"
-            clearable
-          >
-            <template v-slot:prepend>
-              <q-icon name="cloud_upload" @click.stop.prevent />
-            </template>
-          </q-file>
-        </q-card-actions>
-      </q-card>
-    </div>
-    <div v-if="headersDetected" class="flex flex-center q-mt-md q-mr-sm">
-      <q-card class="my-card">
-        <q-card-section class="bg-primary text-white">
-          <div class="text-h6"><q-icon name="toggle_on" />Seleccionar</div>
-          <div class="text-subtitle2">
-            Seleccione las campos necesarias para el reporte.
+  <q-page class="q-pa-md">
+
+    <div class="row q-col-gutter-lg">
+      <div class="col-lg-4 col-md-4 col-xs-12 col-sm-12">
+        <q-card class="no-shadow" bordered>
+
+          <div class="row">
+            <div class="col">
+              <q-card-section>
+                <div class="text-h5 q-mt-sm q-mb-xs text-grey-8">Subir archivo</div>
+                <div>
+                  Selecciona el archivo .log
+                </div>
+              </q-card-section>
+              <q-card-actions>
+                <q-file style="width: 40%;" filled bottom-slots v-model="file" label="Archivo" accept=".log" counter
+                  ref="file" @update:model-value="readHeaders()" clearable>
+                  <template v-slot:prepend>
+                    <q-icon name="cloud_upload" @click.stop.prevent />
+                  </template>
+                </q-file>
+              </q-card-actions>
+            </div>
           </div>
-        </q-card-section>
-        <q-separator />
-        <q-card-actions>
-          <q-item
-            tag="label"
-            v-ripple
-            v-for="item in headersDetected"
-            :key="item"
-          >
-            <q-item-section avatar>
-              <q-toggle size="xs" v-model="options" :val="item" />
-              <q-item-label>{{ item }}</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-card-actions>
-      </q-card>
+          <div class="row q-pa-sm" v-if="headersDetected">
+            <div class="col-2 q-pa-xs" v-for="item in headersDetected" :key="item">
+              <q-toggle v-model="options" :label="item" :val="item" dense />
+            </div>
+          </div>
+
+          <div class="row" v-if="headersDetected">
+            <q-card-actions>
+              <div class="flex flex-center q-mt-md q-mr-sm">
+                <q-btn :disable="options.length <= 0" color="primary" icon="download" label="Descargar" class="q-mr-sm"
+                  @click="generateDownloadableFormat()" />
+
+                <q-btn color="grey-6" text-color="white" label="Cancelar" @click="clear()" />
+              </div>
+            </q-card-actions>
+          </div>
+        </q-card>
+      </div>
     </div>
-    <div v-if="headersDetected" class="flex flex-center q-mt-md q-mr-sm">
-      <q-btn
-        :disable="options.length <= 0"
-        color="primary"
-        icon="download"
-        label="Descargar"
-        @click="generateDownloadableFormat"
-      />
-    </div>
+
   </q-page>
 </template>
 
@@ -106,6 +87,15 @@ export default {
       this.readFile();
 
       const status = exportFile(this.fileOutputName, this.dataToExport);
+    },
+    clear() {
+      this.file = null
+      this.model = null
+      this.data = []
+      this.dataToExport = null
+      this.content = null
+      this.headersDetected = null
+      this.fileOutputName = null
     },
     readFile() {
       var data = "";
