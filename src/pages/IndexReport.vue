@@ -173,6 +173,7 @@ const generateDownloadableReport = () => {
     const XLSX = xlsx;
     const workbook = XLSX.utils.book_new();
 
+
     const sheet = XLSX.utils.json_to_sheet(finalData, {
         skipHeader: true,
     });
@@ -181,6 +182,109 @@ const generateDownloadableReport = () => {
 
     XLSX.writeFile(workbook, 'reporteSemanal.xlsx');
 }
+
+const generateDownloadableReport2 = () => {
+
+    const title = [{ A: 'Reporte Semanal' }]
+
+    let headers = [
+        {
+            A: 'Usuario',
+            B: 'Fuente',
+            C: 'Enviado MB',
+            D: 'Recibido MB',
+            E: '',
+            F: '',
+            G: 'Destino',
+            H: 'Resolved',
+            I: 'Enviado MB',
+            J: 'Recibido MB',
+            K: '',
+            L: '',
+            M: 'Amenaza',
+            N: 'Categoria',
+            O: 'Nivel',
+            P: 'Accion',
+            Q: 'Comentarios',
+            R: 'Dias detectado',
+            S: 'Recurrente',
+            T: '',
+            U: '',
+            V: 'Fecha',
+            W: 'GB Enviado',
+            X: 'GB Recibido'
+        }
+    ]
+    var arr = [];
+    var len = origins.value.length;
+    for (var i = 0; i < len; i++) {
+        arr.push({
+            A: '',
+            B: isset(() => origins.value[i]) ? origins.value[i].srcip : '',
+            C: isset(() => origins.value[i]) ? Math.round(origins.value[i].sentbyte / 1000000) : '',
+            D: isset(() => origins.value[i]) ? Math.round(origins.value[i].rcvdbyte / 1000000) : '',
+            E: '',
+            F: '',
+            G: isset(() => destinations.value[i]) ? destinations.value[i].dstip : '' ,
+            H: isset(() => destinations.value[i]) ? destinations.value[i].resolved : '',
+            I: isset(() => destinations.value[i]) ? Math.round(destinations.value[i].sentbyte / 1000000) : '',
+            J: isset(() => destinations.value[i]) ? Math.round(destinations.value[i].rcvdbyte / 1000000) : '',
+            K: '',
+            L: '',
+            M:isset(() => threats.value[i]) ? threats.value[i].name : '',
+            N: isset(() => threats.value[i]) ? threats.value[i].category : '',
+            O: isset(() => threats.value[i]) ? threats.value[i].textLevel : '',
+            P: isset(() => threats.value[i]) ? threats.value[i].action : '',
+            Q: isset(() => threats.value[i]) ? threats.value[i].comments : '',
+            R: isset(() => threats.value[i]) ? threats.value[i].detectedDate : '',
+            S: isset(() => threats.value[i]) ? threats.value[i].recurrent == true ? 'Si' : 'No' : '',
+            T: '',
+            U: '',
+            V: isset(() => polices.value[i]) ? polices.value[i].date : '',
+            W: isset(() => polices.value[i]) ? polices.value[i].rcvdbyteGB : '',
+            X: isset(() => polices.value[i]) ? polices.value[i].sentbyteGB : ''
+        });
+    }
+
+
+    headers = [""].concat([""])
+        .concat(headers)
+        .concat(arr);
+
+    const finalData = [...title, ...headers];
+
+    const XLSX = xlsx;
+    const workbook = XLSX.utils.book_new();
+
+
+    const sheet = XLSX.utils.json_to_sheet(finalData, {
+        skipHeader: true,
+    });
+
+    XLSX.utils.book_append_sheet(workbook, sheet, "report");
+
+    XLSX.writeFile(workbook, 'reporte.xlsx');
+
+}
+
+/**
+ * Checks to see if a value is set.
+ *
+ * @param   {Function} accessor Function that returns our value
+ * @returns {Boolean}           Value is not undefined or null
+ */
+ function isset (accessor) {
+  try {
+    // Note we're seeing if the returned value of our function is not
+    // undefined or null
+    return accessor() !== undefined && accessor() !== null
+  } catch (e) {
+    // And we're able to catch the Error it would normally throw for
+    // referencing a property of undefined
+    return false
+  }
+}
+
 
 const searchTrheats = async () => {
     const result = await db.threat.where({
@@ -279,7 +383,7 @@ async function fetchDestinations(retryCount = 0, sessionid) {
                 message: 'Información de destinos consultada correctamente.'
             })
             destinations.value = response.data.results.details.slice(0, 10)
-            canDownload.value =true
+            canDownload.value = true
             $q.loading.hide()
             return response.data;
         }
@@ -348,7 +452,7 @@ async function fetchTraffic(retryCount = 0, sessionid) {
                 message: 'Información de origenes consultada correctamente.'
             })
             origins.value = response.data.results.details.slice(0, 20)
-            canDownload.value =true
+            canDownload.value = true
 
             $q.loading.hide()
             return response.data;
@@ -371,6 +475,30 @@ async function fetchTraffic(retryCount = 0, sessionid) {
         $q.loading.hide()
     }
 }
+
+const readfile = () => {
+
+
+    const XLSX = xlsx;
+
+    var workbook = XLSX.readFile('src/assets/template.xlsx');
+
+    // Crear una nueva hoja de trabajo con datos de ejemplo
+    var ws_data = [['Nuevo dato 1', 'Nuevo dato 2']];
+    var newWorksheet = XLSX.utils.aoa_to_sheet(ws_data);
+
+    // Agregar la nueva hoja de trabajo al libro de trabajo existente
+    var newSheetName = "Nueva Hoja";
+    workbook.SheetNames.push(newSheetName);
+    workbook.Sheets[newSheetName] = newWorksheet;
+
+    // Guardar el libro de trabajo actualizado en un nuevo archivo xlsx
+    XLSX.writeFile(workbook, 'archivo_actualizado.xlsx');
+}
+
+onMounted(() => {
+    //readfile()
+})
 </script>
   
 <template>
@@ -433,7 +561,8 @@ async function fetchTraffic(retryCount = 0, sessionid) {
                 </div>
                 <div class="col flex content-center">
                     <q-btn color="primary" label="Buscar" @click="search()" style="margin-right: 8px" />
-                    <q-btn color="green" label="Descargar" @click="generateDownloadableReport()" :disable="!canDownload" />
+                   <!-- <q-btn color="green" label="Descargar" @click="generateDownloadableReport()" :disable="!canDownload" />-->
+                    <q-btn color="green" label="Descargar" @click="generateDownloadableReport2()" :disable="!canDownload"/>
                 </div>
             </div>
         </q-card>

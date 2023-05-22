@@ -7,12 +7,7 @@ import axios from "axios";
 // "export default () => {}" function below (which runs individually
 // for each client)
 
-const api = axios.create({
-  proxy: {
-    protocol: "https",
-    host: "10.123.50.21",
-  },
-});
+const api = axios.create();
 
 axios.defaults.headers.common = {
   Accept: "application/json",
