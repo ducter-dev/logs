@@ -12,7 +12,10 @@
             Analítica
           </router-link>
           <router-link to="/report" class="text-white">
-           Reporte semanal
+            Reporte semanal
+          </router-link>
+          <router-link to="/databases" class="text-white">
+            Base de datos
           </router-link>
         </div>
         <q-space />

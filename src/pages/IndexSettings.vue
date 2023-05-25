@@ -144,7 +144,7 @@ onMounted(() => {
   <q-page class="q-pa-md">
 
     <div class="row q-col-gutter-lg">
-      <div class="col-lg-4 col-md-4 col-xs-12 col-sm-12">
+      <div class="col-12">
         <q-card class="no-shadow" bordered>
           <div class="row">
             <div class="col">
