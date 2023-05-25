@@ -2,7 +2,7 @@
   <q-page class="q-pa-md">
 
     <div class="row q-col-gutter-lg">
-      <div class="col-lg-4 col-md-4 col-xs-12 col-sm-12">
+      <div class="col-12">
         <q-card class="no-shadow" bordered>
 
           <div class="row">
@@ -48,13 +48,12 @@
 
 <script>
 import { exportFile } from "quasar";
-import { useQuasar } from "quasar";
 
 export default {
   data() {
     return {
       file: null,
-      options: ["date", "time", "srcip", "dstip", "hostname", "url"],
+      options: [],
       model: null,
       data: [],
       dataToExport: null,
